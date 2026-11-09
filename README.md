@@ -37,7 +37,7 @@ Each of those services has its own website and account. Checking one suspicious 
 
 **A search result.** The score from 0 to 100, how confident DigiAsh is in it, the most important findings, and which services contributed most:
 
-![A search result showing a risk score of 74](images/results.png)
+![A search result scoring 74: three sources each found a little, and together they agree](images/results.png)
 
 **A printable report.** One click turns a result into a report you can save as a PDF and attach to an investigation:
 
@@ -82,16 +82,64 @@ This model is called **"bring your own key"**: each user connects their own free
 
 ## How the risk score works
 
-Each service gives its own kind of answer: one says "9 out of 92 antivirus engines flagged this", another says "a sandbox saw this file behave maliciously", another says "this address is on an allow-list of legitimate services".
+Every search ends in one number from 0 to 100. It isn't an average and it isn't a black box. 🧮 **[Full explanation, with a calculator you can try](https://digiash.com/scoring)**
 
-DigiAsh turns each answer into a measure of evidence, and takes into account how reliable that kind of evidence usually is. It then combines them in a way that behaves sensibly:
+### The idea
 
-- **Silence doesn't count against anything.** If a service has never seen an indicator, it neither raises nor lowers the score.
-- **Agreement raises the score.** Two independent services both reporting a problem is stronger evidence than one.
-- **One strong finding is enough on its own.** A confirmed malware sample scores high even if other services haven't seen it yet.
-- **Good evidence lowers it.** If a service recognises the address as a well-known legitimate service, the score comes down.
+Think of the nine sources as independent witnesses. Each one either saw something suspicious or didn't, and some witnesses are more reliable than others:
 
-Alongside the score, DigiAsh shows a **confidence level** (how many of the relevant services actually answered) and a breakdown of which services drove the score, so the number is never a black box.
+1. **Each source gives evidence of some strength.** Two antivirus engines flagging a site is mild evidence; nine is strong. A source with nothing on record gives none.
+2. **Some sources count for more.** Curated malware feeds that list only confirmed threats are trusted more than broad reputation scores.
+3. **Agreement adds up.** Each finding shrinks the chance that the target is harmless. Sources that agree push the score up quickly, and silence never pulls a real finding down.
+
+### A worked example
+
+The [sample search](https://digiash.com/sample) checks `secure-login-portal.example`, a six-day-old domain. Seven sources looked; three found something, none of them conclusive:
+
+| Source | What it found | Strength | × Trust | = Contribution |
+|---|---|---|---|---|
+| urlscan.io | scanner score 75/100 | 0.60 | 0.80 | **0.48** |
+| VirusTotal | 2 of 92 engines flag it | 0.39 | 0.90 | **0.35** |
+| IPQualityScore | fraud score 80 | 0.40 | 0.60 | **0.24** |
+
+Each contribution leaves a chance the source is wrong (1 − 0.48 = 0.52, and so on). The domain is harmless only if **all three** are wrong:
+
+> 0.52 × 0.65 × 0.76 ≈ 0.255, so the chance something is really there is 1 − 0.255 = 0.745 → **score 74, critical**
+
+No single source is above 48, but together they reach 74. That is the point of combining evidence.
+
+### Why not an average?
+
+Because most sources have never heard of most threats. If a curated malware feed confirms an address and seven other sources have no record of it, an average gives about **12** (low risk), burying a confirmed threat. DigiAsh gives **95** (critical). An average would also *fall* as more sources are connected, for the same evidence.
+
+### Signs of a legitimate target, and how sure the score is
+
+- **Benign evidence lowers the score.** An allow-list entry or a sandbox's "whitelisted" verdict can cut the score by up to 60%.
+- **Levels follow the score:** low 0–14, medium 15–39, high 40–69, critical 70–100.
+- **Confidence is shown separately:** how many of the sources that cover this kind of indicator actually answered. A low score from one source isn't presented as a clean bill of health.
+
+<details>
+<summary><b>The formula and each source's weighting</b></summary>
+
+```
+score = 100 × (1 − Π(1 − trust × strength)) × (1 − 0.6 × benign)
+```
+
+| Source | Strongest evidence | Trust |
+|---|---|---|
+| abuse.ch (MalwareBazaar, ThreatFox, URLhaus) | known malware sample 0.95; listed indicator 0.75+ | 0.95 |
+| VirusTotal | 1 − e^(−engines/4): 1 engine 0.22, 9 engines 0.89 | 0.90 |
+| AbuseIPDB | its abuse confidence; allow-list counts as benign | 0.85 |
+| Hybrid Analysis | sandbox "malicious" 0.85+; "whitelisted" counts as benign | 0.85 |
+| urlscan.io | malicious verdict 0.85, else score × 0.8 | 0.80 |
+| IPQualityScore | phishing or malware 0.75; fraud score 90+ 0.60 | 0.60 |
+| AlienVault OTX | 1 − e^(−pulses/6): 6 pulses 0.63 | 0.60 |
+| PulseDive | its risk rating, critical 0.85 | 0.60 |
+| LeakIX | exposed services up to 0.50; ransomed data 0.60 | 0.50 |
+
+The calculator on the website runs a copy of the exact production code, and an automated test checks on thousands of random cases that the two always agree.
+
+</details>
 
 ## Security, explained simply
 
