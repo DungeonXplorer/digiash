@@ -52,7 +52,7 @@ DigiAsh is operated by a single maintainer, so duties that a larger organisation
 
 ## 6. Risk management
 
-Security risks are identified and assessed when features are designed and before releases, and the full application is reviewed periodically. The most recent assessment (October 2026) covered static and dynamic security testing, dependencies, the OWASP Top 10:2025, GDPR, these principles and the providers' terms; its findings were fixed or, where they need action at launch, scheduled in the launch checks. Each risk is treated by fixing it, reducing it with additional controls, or accepting it with a recorded reason.
+Security risks are identified and assessed when features are designed and before releases, and the full application is reviewed periodically. The most recent assessment (November 2026, including tests against the live service) covered static and dynamic security testing, dependencies, the OWASP Top 10:2025, GDPR, these principles and the providers' terms; its findings were fixed or, where they need an account setting or a provider's action, scheduled with an owner. Each risk is treated by fixing it, reducing it with additional controls, or accepting it with a recorded reason.
 
 ## 7. Controls
 
