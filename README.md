@@ -55,7 +55,7 @@ flowchart LR
     DigiAsh -->|"your own API key"| S1["VirusTotal"]
     DigiAsh -->|"your own API key"| S2["AbuseIPDB"]
     DigiAsh -->|"your own API key"| S3["urlscan.io"]
-    DigiAsh -->|"...and up to 7 more"| S4["Other sources"]
+    DigiAsh -->|"...and up to 6 more"| S4["Other sources"]
     S1 & S2 & S3 & S4 --> Score["Combined risk score<br/>+ evidence + links back"]
     Score --> You
 ```
